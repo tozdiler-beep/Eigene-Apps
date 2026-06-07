@@ -1,317 +1,330 @@
-
 <!DOCTYPE html>
 <html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Supplement Tracker</title>
-    
-    <!-- Meta-Tags für die Installation als Web-App (Homescreen) -->
+
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Supplements">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#09090b" id="theme-color-meta">
+    <meta name="theme-color" content="#09090b">
 
-    <!-- Schickes, dynamisch generiertes SVG-App-Icon für dein Handy -->
-    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2222%22 fill=%22%2310b981%22/><path d=%22M30 50 L45 65 L70 35%22 fill=%22none%22 stroke=%22white%22 stroke-width=%2210%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/></svg>">
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2222%22 fill=%22%2310b981%22/><path d=%22M30 50 L45 65 L70 35%22 fill=%22none%22 stroke=%22white%22 stroke-width=%2210%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/></svg>">
+    <link rel="manifest" href="data:application/manifest+json,{%22name%22:%22Supplements%22,%22short_name%22:%22Supplements%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%2309090b%22,%22theme_color%22:%22%2309090b%22}">
 
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
-                    }
-                }
-            }
-        }
-    </script>
-    <!-- Inter Font für bessere Lesbarkeit -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            -webkit-tap-highlight-color: transparent;
-            /* Verhindert das typische "Gummiband-Scrollen" auf iOS im Vollbildmodus */
-            overscroll-behavior-y: contain; 
+        /* Modernes, dunkles UI-Design */
+        :root {
+            --bg-color: #09090b;
+            --card-bg: #18181b;
+            --accent-gradient: linear-gradient(135deg, #0d9488, #115e59);
+            --text-main: #f4f4f5;
+            --text-muted: #a1a1aa;
+            --border-color: #27272a;
         }
-        /* Extra Padding für iPhones mit Home-Indicator (Safe Area) */
-        @supports (padding-bottom: env(safe-area-inset-bottom)) {
-            nav {
-                padding-bottom: calc(12px + env(safe-area-inset-bottom));
-            }
-            body {
-                padding-bottom: calc(90px + env(safe-area-inset-bottom));
-            }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-main); padding: 20px; padding-bottom: 80px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-top: 10px; }
+        .header h1 { font-size: 28px; font-weight: 700; }
+        
+        .progress-card {
+            background: var(--accent-gradient);
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3);
+        }
+        .progress-card h3 { font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.9; }
+        .progress-card .count { font-size: 48px; font-weight: 800; margin: 8px 0; }
+        .progress-card .status { font-size: 16px; opacity: 0.9; }
+
+        .section-title { font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 12px; margin-top: 24px; }
+        
+        .empty-state {
+            border: 2px dashed var(--border-color);
+            border-radius: 16px;
+            padding: 32px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 15px;
+        }
+
+        .list-container { display: flex; flex-direction: column; gap: 12px; }
+        .item-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .item-info h4 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+        .item-info p { font-size: 13px; color: var(--text-muted); }
+
+        .btn-check {
+            background-color: #27272a;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--text-main);
+        }
+        .btn-check.done { background-color: #0d9488; }
+
+        /* Navigation unten */
+        .nav-bar {
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            height: 64px;
+            background-color: rgba(24, 24, 27, 0.9);
+            backdrop-filter: blur(12px);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 1000;
+        }
+        .nav-item {
+            background: none; border: none;
+            color: var(--text-muted);
+            display: flex; flex-direction: column; align-items: center;
+            gap: 4px; font-size: 11px; cursor: pointer;
+            width: 33%;
+        }
+        .nav-item.active { color: #0d9488; }
+        .nav-item svg { width: 20px; height: 20px; }
+
+        /* Modal für Hinzufügen */
+        .modal {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0,0,0,0.8);
+            display: none; justify-content: center; align-items: flex-end;
+            z-index: 2000;
+        }
+        .modal.open { display: flex; }
+        .modal-content {
+            background-color: var(--card-bg);
+            border-top-left-radius: 24px; border-top-right-radius: 24px;
+            padding: 24px; width: 100%; max-width: 500px;
+            box-shadow: 0 -10px 25px -5px rgba(0,0,0,0.5);
+        }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-header h3 { font-size: 20px; }
+        .close-btn { background: none; border: none; color: var(--text-muted); font-size: 24px; }
+        
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 6px; }
+        .form-control {
+            width: 100%; background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 12px; padding: 12px;
+            color: var(--text-main); font-size: 15px;
+        }
+        .btn-submit {
+            width: 100%; background: var(--accent-gradient);
+            color: var(--text-main); border: none;
+            border-radius: 12px; padding: 14px;
+            font-size: 16px; font-weight: 600; margin-top: 10px; cursor: pointer;
         }
     </style>
 </head>
-<body class="bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-50 min-h-screen transition-colors duration-200">
+<body>
 
-    <div class="max-w-md mx-auto px-4 py-8">
-        
-        <!-- Header mit Logo und Darkmode-Toggler -->
-        <header class="flex justify-between items-center mb-8 pt-2">
-            <div>
-                <h1 class="text-2xl font-bold tracking-tight">Supplements</h1>
-                <p class="text-xs text-zinc-500 dark:text-zinc-400" id="current-date-display"></p>
-            </div>
-            <div class="flex items-center gap-2">
-                <!-- Dark Mode Button -->
-                <button id="theme-toggle" class="p-2 rounded-xl bg-zinc-200/60 dark:bg-zinc-800/60 hover:scale-105 active:scale-95 transition-all text-zinc-700 dark:text-zinc-300">
-                    <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
-                    <svg id="theme-toggle-light-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.46 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 100 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>
-                </button>
-                <!-- Benachrichtigungs-Button -->
-                <button id="notify-toggle" class="p-2 rounded-xl bg-zinc-200/60 dark:bg-zinc-800/60 hover:scale-105 active:scale-95 transition-all text-zinc-700 dark:text-zinc-300 relative" title="Mitteilungen erlauben">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
-                    </svg>
-                    <span id="notify-indicator" class="absolute top-1 right-1 w-2.5 h-2.5 bg-amber-500 rounded-full animate-ping hidden"></span>
-                </button>
-            </div>
-        </header>
-
-        <!-- Fortschrittsanzeige für heute -->
-        <section class="bg-gradient-to-tr from-emerald-500 to-teal-600 text-white p-5 rounded-3xl shadow-sm mb-8 relative overflow-hidden">
-            <div class="relative z-10">
-                <span class="text-xs uppercase tracking-wider font-semibold opacity-85">Dein Fortschritt heute</span>
-                <h2 class="text-3xl font-bold mt-1" id="progress-text">0 / 0</h2>
-                <p class="text-sm opacity-90 mt-1" id="progress-motivation">Lade deine Liste...</p>
-                <div class="w-full bg-white/25 h-2.5 rounded-full mt-4 overflow-hidden">
-                    <div id="progress-bar" class="bg-white h-full rounded-full transition-all duration-500" style="width: 0%"></div>
-                </div>
-            </div>
-            <div class="absolute -right-8 -bottom-8 w-32 h-32 bg-white/10 rounded-full blur-xl"></div>
-        </section>
-
-        <!-- Sektion: Heutige To-Dos -->
-        <main class="space-y-6 pb-16">
-            <div>
-                <h3 class="text-sm font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-3">Heute fällig</h3>
-                <div id="due-list" class="space-y-3">
-                    <div class="text-center py-8 text-zinc-400 dark:text-zinc-600 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl">
-                        Keine ausstehenden Supplements für heute.
-                    </div>
-                </div>
-            </div>
-
-            <!-- Sektion: Bereits eingenommen -->
-            <div>
-                <h3 class="text-sm font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-3">Bereits eingenommen</h3>
-                <div id="taken-list" class="space-y-3 opacity-75"></div>
-            </div>
-
-            <!-- Sektion: Alle Supplements verwalten -->
-            <div class="pt-4 border-t border-zinc-200 dark:border-zinc-800">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-sm font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">Meine Liste</h3>
-                    <button onclick="openModal()" class="text-xs bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-100 font-medium px-3 py-1.5 rounded-lg transition-all flex items-center gap-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3.5 h-3.5">
-                            <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5z" />
-                        </svg>
-                        Hinzufügen
-                    </button>
-                </div>
-                <div id="all-supplements-list" class="space-y-2"></div>
-            </div>
-        </main>
-
-        <!-- Benachrichtigungs-Banner -->
-        <div id="toast-container" class="fixed bottom-24 left-4 right-4 z-50 pointer-events-none space-y-2"></div>
-
-        <!-- Navigation Bar unten -->
-        <nav class="fixed bottom-0 left-0 right-0 border-t border-zinc-200/80 bg-white/95 dark:bg-zinc-900/95 dark:border-zinc-800 backdrop-blur-md py-3 px-6 flex justify-around items-center z-40 max-w-md mx-auto">
-            <button onclick="scrollToTop()" class="flex flex-col items-center gap-0.5 text-zinc-800 dark:text-white">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                </svg>
-                <span class="text-[10px] font-medium">Aktivität</span>
-            </button>
-            <button onclick="openModal()" class="flex flex-col items-center gap-0.5 text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                </svg>
-                <span class="text-[10px] font-medium">Neu</span>
-            </button>
-            <button onclick="exportData()" class="flex flex-col items-center gap-0.5 text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300" title="Daten exportieren">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                </svg>
-                <span class="text-[10px] font-medium">Sichern</span>
-            </button>
-        </nav>
-
-        <!-- MODAL -->
-        <div id="supplement-modal" class="fixed inset-0 z-50 flex items-end justify-center sm:items-center p-0 sm:p-4 bg-black/60 opacity-0 pointer-events-none transition-opacity duration-300">
-            <div class="bg-white dark:bg-zinc-900 w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl transform translate-y-full sm:translate-y-0 sm:scale-95 transition-transform duration-300 max-h-[90vh] overflow-y-auto">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-xl font-bold" id="modal-title">Supplement hinzufügen</h2>
-                    <button onclick="closeModal()" class="text-zinc-400 hover:text-zinc-600 p-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-6 h-6">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
-
-                <form id="supplement-form" onsubmit="saveSupplement(event)" class="space-y-4">
-                    <input type="hidden" id="edit-id">
-                    <div>
-                        <label class="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Name des Supplements</label>
-                        <input type="text" id="supp-name" required placeholder="z.B. Vitamin D3, Omega 3, Zink" class="w-full px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Dosierung / Menge</label>
-                        <input type="text" id="supp-dosage" placeholder="z.B. 1 Kapsel, 5000 IE, 15mg" class="w-full px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Wie oft einnehmen?</label>
-                        <select id="supp-frequency" onchange="toggleFrequencyDetails()" class="w-full px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                            <option value="daily">Täglich</option>
-                            <option value="weekly">Wöchentlich (Alle 7 Tage)</option>
-                            <option value="custom">Alle X Tage (Individuell)</option>
-                        </select>
-                    </div>
-                    <div id="custom-days-container" class="hidden">
-                        <label class="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Intervall in Tagen</label>
-                        <input type="number" id="supp-custom-days" min="1" value="3" class="w-full px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Empfohlene Uhrzeit (Optional)</label>
-                        <input type="time" id="supp-time" class="w-full px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Notiz / Einnahmehinweis</label>
-                        <input type="text" id="supp-note" placeholder="z.B. Zum Frühstück, mit Fett" class="w-full px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                    </div>
-                    <button type="submit" class="w-full py-3.5 bg-emerald-500 hover:bg-emerald-600 active:scale-95 transition-all text-white font-semibold rounded-xl mt-4">
-                        Speichern
-                    </button>
-                </form>
-            </div>
-        </div>
-
+    <div class="header">
+        <h1>Supplements</h1>
     </div>
 
-    <!-- Script Logik -->
-    <script>
-        let supplements = [];
-        let intakeLogs = [];
+    <div class="progress-card">
+        <h3>Dein Fortschritt Heute</h3>
+        <div class="count" id="progress-text">0 / 0</div>
+        <div class="status" id="motivation-text">Trage deine Supplements ein...</div>
+    </div>
 
-        window.onload = function() {
-            loadFromLocalStorage();
-            updateDateDisplay();
-            renderApp();
-            initTheme();
-            checkNotificationStatus();
+    <div class="section-title">Heute fällig</div>
+    <div id="todo-list" class="list-container">
+        </div>
+
+    <div class="section-title">Meine Liste</div>
+    <div id="master-list" class="list-container">
+        </div>
+
+    <div class="nav-bar">
+        <button class="nav-item active" onclick="switchTab('today')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+            Aktivität
+        </button>
+        <button class="nav-item" onclick="openModal()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Neu
+        </button>
+    </div>
+
+    <div class="modal" id="add-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Neues Supplement</h3>
+                <button class="close-btn" onclick="closeModal()">×</button>
+            </div>
+            <div class="form-group">
+                <label>Name</label>
+                <input type="text" id="sup-name" class="form-control" placeholder="z.B. Magnesium">
+            </div>
+            <div class="form-group">
+                <label>Dosierung / Uhrzeit</label>
+                <input type="text" id="sup-dosage" class="form-control" placeholder="z.B. 400mg - Abends">
+            </div>
+            <button class="btn-submit" onclick="addSupplement()">Hinzufügen</button>
+        </div>
+    </div>
+
+    <script>
+        // Daten-Management (LocalStorage)
+        let data = {
+            supplements: [],
+            history: {}
         };
 
-        function updateDateDisplay() {
-            const options = { weekday: 'long', day: 'numeric', month: 'long' };
-            const today = new Date();
-            document.getElementById('current-date-display').innerText = today.toLocaleDateString('de-DE', options);
-        }
+        // Genaue Datumskennung für heute (YYYY-MM-DD)
+        const getTodayKey = () => {
+            const d = new Date();
+            return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        };
 
-        function loadFromLocalStorage() {
-            const storedSupps = localStorage.getItem('supplements');
-            const storedLogs = localStorage.getItem('intakeLogs');
-            
-            supplements = storedSupps ? JSON.parse(storedSupps) : getDemoData();
-            intakeLogs = storedLogs ? JSON.parse(storedLogs) : [];
-        }
-
-        function getDemoData() {
-            return [
-                { id: 'demo1', name: 'Vitamin D3', dosage: '5000 IE', frequency: 'daily', customDays: 1, time: '08:00', note: 'Mit Fett einnehmen' },
-                { id: 'demo2', name: 'Magnesium', dosage: '300 mg', frequency: 'daily', customDays: 1, time: '21:30', note: 'Abends vor dem Schlafen' },
-                { id: 'demo3', name: 'Vitamin B12', dosage: '1000 µg', frequency: 'weekly', customDays: 7, time: '09:00', note: 'Wöchentlich am Sonntag' }
-            ];
-        }
-
-        function saveToLocalStorage() {
-            localStorage.setItem('supplements', JSON.stringify(supplements));
-            localStorage.setItem('intakeLogs', JSON.stringify(intakeLogs));
-        }
-
-        function getDaysDiff(date1, date2) {
-            const d1 = new Date(date1.getFullYear(), date1.getMonth(), date1.getDate());
-            const d2 = new Date(date2.getFullYear(), date2.getMonth(), date2.getDate());
-            const diffTime = Math.abs(d2 - d1);
-            return Math.floor(diffTime / (1000 * 60 * 60 * 24));
-        }
-
-        function isDueToday(supp) {
-            const today = new Date();
-            const todayStr = getTodayString();
-            
-            const alreadyTakenToday = intakeLogs.some(log => log.supplementId === supp.id && log.date === todayStr);
-            if (alreadyTakenToday) {
-                return false;
-            }
-
-            const logsForSupp = intakeLogs.filter(log => log.supplementId === supp.id);
-            if (logsForSupp.length === 0) {
-                return true; 
-            }
-
-            logsForSupp.sort((a, b) => new Date(b.date) - new Date(a.date));
-            const lastTakenDate = new Date(logsForSupp[0].date);
-
-            const daysDiff = getDaysDiff(today, lastTakenDate);
-            const interval = supp.frequency === 'weekly' ? 7 : (supp.frequency === 'custom' ? parseInt(supp.customDays) : 1);
-
-            return daysDiff >= interval;
-        }
-
-        function isTakenToday(supp) {
-            const todayStr = getTodayString();
-            return intakeLogs.some(log => log.supplementId === supp.id && log.date === todayStr);
-        }
-
-        function getTodayString() {
-            const today = new Date();
-            return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-        }
-
-        function renderApp() {
-            const dueList = document.getElementById('due-list');
-            const takenList = document.getElementById('taken-list');
-            const allList = document.getElementById('all-supplements-list');
-
-            dueList.innerHTML = '';
-            takenList.innerHTML = '';
-            allList.innerHTML = '';
-
-            let dueCount = 0;
-            let takenCount = 0;
-
-            const sortedSupps = [...supplements].sort((a, b) => {
-                if (!a.time) return 1;
-                if (!b.time) return -1;
-                return a.time.localeCompare(b.time);
-            });
-
-            sortedSupps.forEach(supp => {
-                const due = isDueToday(supp);
-                const taken = isTakenToday(supp);
-
-                if (due) {
-                    dueCount++;
-                    dueList.appendChild(createSupplementCard(supp, false));
-                } else if (taken) {
-                    takenCount++;
-                    takenList.appendChild(createSupplementCard(supp, true));
+        // Laden beim Start
+        window.addEventListener('DOMContentLoaded', () => {
+            try {
+                const localData = localStorage.getItem('supplement_tracker_data');
+                if (localData) {
+                    data = JSON.parse(localData);
                 }
+                // Fallback-Struktur falls Daten unvollständig
+                if (!data.supplements) data.supplements = [];
+                if (!data.history) data.history = {};
+                
+                render();
+            } catch (e) {
+                console.error("Fehler beim Laden der Daten:", e);
+                alert("Daten konnten nicht geladen werden. Setze zurück.");
+                render();
+            }
+        });
 
-                allList.appendChild(createAdminCard(supp));
+        function saveData() {
+            localStorage.setItem('supplement_tracker_data', JSON.stringify(data));
+            render();
+        }
+
+        function openModal() { document.getElementById('add-modal').classList.add('open'); }
+        function closeModal() { document.getElementById('add-modal').classList.remove('open'); }
+
+        function addSupplement() {
+            const name = document.getElementById('sup-name').value.trim();
+            const dosage = document.getElementById('sup-dosage').value.trim();
+            
+            if (!name) return;
+
+            data.supplements.push({
+                id: Date.now().toString(),
+                name: name,
+                dosage: dosage || '1x täglich'
             });
 
-            if (dueCount === 0) {
-                dueList.innerHTML = `
-                    <div class="text-center py-8 text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/30 rounded-3xl p-6">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w
+            document.getElementById('sup-name').value = '';
+            document.getElementById('sup-dosage').value = '';
+            closeModal();
+            saveData();
+        }
+
+        function toggleCheck(id) {
+            const today = getTodayKey();
+            if (!data.history[today]) data.history[today] = [];
+
+            const index = data.history[today].indexOf(id);
+            if (index > -1) {
+                data.history[today].splice(index, 1); // Wieder unchecken
+            } else {
+                data.history[today].push(id); // Als eingenommen markieren
+            }
+            saveData();
+        }
+
+        function deleteSupplement(id) {
+            if(confirm("Möchtest du dieses Supplement wirklich löschen?")) {
+                data.supplements = data.supplements.filter(item => item.id !== id);
+                saveData();
+            }
+        }
+
+        function render() {
+            const todoList = document.getElementById('todo-list');
+            const masterList = document.getElementById('master-list');
+            const today = getTodayKey();
+            const takenToday = data.history[today] || [];
+
+            // 1. "Heute Fällig" Liste rendern
+            if (data.supplements.length === 0) {
+                todoList.innerHTML = `<div class="empty-state">Keine Supplements eingetragen. Tippe unten auf "Neu".</div>`;
+                masterList.innerHTML = `<div class="empty-state">Die Liste ist leer.</div>`;
+                document.getElementById('progress-text').innerText = "0 / 0";
+                document.getElementById('motivation-text').innerText = "Erstelle zuerst ein Supplement!";
+                return;
+            }
+
+            let todoHTML = '';
+            data.supplements.forEach(item => {
+                const isDone = takenToday.includes(item.id);
+                todoHTML += `
+                    <div class="item-card">
+                        <div class="item-info">
+                            <h4>${item.name}</h4>
+                            <p>${item.dosage}</p>
+                        </div>
+                        <button class="btn-check ${isDone ? 'done' : ''}" onclick="toggleCheck('${item.id}')">
+                            ${isDone ? '✓' : ''}
+                        </button>
+                    </div>
+                `;
+            });
+            todoList.innerHTML = todoHTML;
+
+            // 2. "Verwaltung / Meine Liste" rendern
+            let masterHTML = '';
+            data.supplements.forEach(item => {
+                masterHTML += `
+                    <div class="item-card" style="opacity: 0.8;">
+                        <div class="item-info">
+                            <h4>${item.name}</h4>
+                            <p>${item.dosage}</p>
+                        </div>
+                        <button class="btn-check" style="background-color: #7f1d1d; font-size: 12px;" onclick="deleteSupplement('${item.id}')">✕</button>
+                    </div>
+                `;
+            });
+            masterList.innerHTML = masterHTML;
+
+            // 3. Fortschrittskarte aktualisieren
+            const total = data.supplements.length;
+            const count = takenToday.filter(id => data.supplements.some(s => s.id === id)).length;
+            document.getElementById('progress-text').innerText = `${count} / ${total}`;
+            
+            if(total > 0 && count === total) {
+                document.getElementById('motivation-text').innerText = "Hervorragend! Alles für heute erledigt. 🎉";
+            } else if (count > 0) {
+                document.getElementById('motivation-text').innerText = "Weiter so! Du bist auf einem guten Weg.";
+            } else {
+                document.getElementById('motivation-text').innerText = "Bereit für den Tag? Starte jetzt deine Routine.";
+            }
+        }
+
+        function switchTab(tab) {
+            // Für spätere Erweiterungen (z.B. Verlaufs-Statistiken)
+        }
+    </script>
+</body>
+</html>
