@@ -5,12 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Supplement Tracker</title>
 
+    <link rel="manifest" href="manifest.json">
+
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#09090b">
-
-    <link rel="manifest" href="data:application/manifest+json,{%22name%22:%22Supplement%20Tracker%22,%22short_name%22:%22Supplements%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%2309090b%22,%22theme_color%22:%22%2309090b%22}">
 
     <style>
         :root {
@@ -71,7 +71,6 @@
         .btn-check.done { background-color: #0d9488; }
         .btn-delete { background-color: #f43f5e; color: white; border: none; padding: 8px 12px; border-radius: 8px; font-size: 12px; cursor: pointer; }
 
-        /* Navigation unten */
         .nav-bar {
             position: fixed; bottom: 0; left: 0; right: 0; height: 68px;
             background-color: rgba(24, 24, 27, 0.95); backdrop-filter: blur(12px);
@@ -84,7 +83,6 @@
         .nav-item.active { color: #0d9488; }
         .nav-item svg { width: 22px; height: 22px; }
 
-        /* Modal */
         .modal {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.8);
             display: none; justify-content: center; align-items: flex-end; z-index: 2000;
@@ -161,15 +159,15 @@
             </div>
             <div class="form-group">
                 <label>Name des Supplements</label>
-                <input type="text" id="sup-name" class="form-control" placeholder="z.B. Omega 3, Vitamin D3">
+                <input type="text" id="sup-name" class="form-control" placeholder="z.B. Magnesium">
             </div>
             <div class="form-group">
                 <label>Dosierung / Menge</label>
-                <input type="text" id="sup-dosage" class="form-control" placeholder="z.B. 1 Kapsel, 5000 i.U.">
+                <input type="text" id="sup-dosage" class="form-control" placeholder="z.B. 400mg">
             </div>
             <div class="form-group">
                 <label>Häufigkeit (Intervall)</label>
-                <select id="sup-interval" class="form-control" onchange="toggleIntervalOptions()">
+                <select id="sup-interval" class="form-control">
                     <option value="1">Täglich</option>
                     <option value="2">Alle 2 Tage</option>
                     <option value="7">Einmal pro Woche</option>
@@ -221,7 +219,7 @@
                 name: name,
                 dosage: dosage || '1x',
                 interval: interval,
-                createdTimestamp: Date.now() // Basis für Intervallberechnungen
+                createdTimestamp: Date.now()
             });
 
             document.getElementById('sup-name').value = '';
@@ -250,9 +248,8 @@
         }
 
         function isDueToday(item) {
-            if (item.interval === 1) return true; // Täglich immer fällig
+            if (item.interval === 1) return true;
             
-            // Berechnung der vergangenen Tage seit Erstellung für das Intervall
             const createdDate = new Date(item.createdTimestamp);
             createdDate.setHours(0,0,0,0);
             const todayDate = new Date();
@@ -270,7 +267,6 @@
             const today = getTodayKey();
             const takenToday = data.history[today] || [];
 
-            // 1. Filtere fällige Elemente für heute aus den Intervallen
             const dueItems = data.supplements.filter(isDueToday);
 
             if (dueItems.length === 0) {
@@ -294,7 +290,6 @@
                 todoList.innerHTML = todoHTML;
             }
 
-            // 2. Verwaltungstab rendern (Alle Elemente auflisten)
             if (data.supplements.length === 0) {
                 masterList.innerHTML = `<div class="empty-state">Noch keine Supplements angelegt.</div>`;
             } else {
@@ -315,7 +310,6 @@
                 masterList.innerHTML = masterHTML;
             }
 
-            // 3. Fortschritt berechnen
             const total = dueItems.length;
             const count = dueItems.filter(item => takenToday.includes(item.id)).length;
             document.getElementById('progress-text').innerText = `${count} / ${total}`;
